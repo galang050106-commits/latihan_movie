@@ -2,82 +2,87 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Movie;
+use App\Services\MovieService;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\StoreMovieRequest;
 
 class MovieController extends Controller
 {
+    protected $movieService;
 
-    public function index()
+    public function __construct(MovieService $movieService)
     {
-
-        $query = Movie::latest();
-        if (request('search')) {
-            $query->where('judul', 'like', '%' . request('search') . '%')
-                ->orWhere('sinopsis', 'like', '%' . request('search') . '%');
-        }
-        $movies = $query->paginate(6)->withQueryString();
-        return view('homepage', compact('movies'));
+        $this->movieService = $movieService;
     }
 
+    // =========================
+    // LIST DATA
+    // =========================
+    public function index()
+    {
+        $movies = $this->movieService->getAllMovies(request('search'));
+        return view('data-movies', compact('movies'));
+    }
+
+    // =========================
+    // DETAIL
+    // =========================
     public function detail($id)
     {
-        $movie = Movie::find($id);
+        $movie = $this->movieService->getMovieById($id);
         return view('detail', compact('movie'));
     }
 
+    // =========================
+    // FORM INPUT
+    // =========================
     public function create()
     {
         $categories = Category::all();
         return view('input', compact('categories'));
     }
 
-        public function store(StoreMovieRequest $request)
-        {
-            // Ambil data yang sudah tervalidasi
-            $validated = $request->validated();
+    // =========================
+    // STORE
+    // =========================
+    public function store(StoreMovieRequest $request)
+    {
+        $data = $request->validated();
 
-            // Upload foto jika ada
-            if ($request->hasFile('foto_sampul')) {
-                $randomName = Str::uuid()->toString();
-                $fileExtension = $request->file('foto_sampul')->getClientOriginalExtension();
-                $fileName = $randomName . '.' . $fileExtension;
+        // upload foto
+        if ($request->hasFile('foto_sampul')) {
+            $file = $request->file('foto_sampul');
+            $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('images'), $fileName);
 
-                // Simpan ke public/images
-                $request->file('foto_sampul')->move(public_path('images'), $fileName);
-
-                $validated['foto_sampul'] = $fileName;
-            }
-
-            // Simpan ke database
-            Movie::create($validated);
-
-            return redirect('/')->with('success', 'Film berhasil ditambahkan.');
+            $data['foto_sampul'] = $fileName;
         }
 
-    public function data()
-    {
-        $movies = Movie::latest()->paginate(10);
-        return view('data-movies', compact('movies'));
+        $this->movieService->createMovie($data);
+
+        return redirect('/')->with('success', 'Film berhasil ditambahkan.');
     }
 
+    // =========================
+    // FORM EDIT
+    // =========================
     public function form_edit($id)
     {
-        $movie = Movie::find($id);
+        $movie = $this->movieService->getMovieById($id);
         $categories = Category::all();
+
         return view('form-edit', compact('movie', 'categories'));
     }
 
+    // =========================
+    // UPDATE
+    // =========================
     public function update(Request $request, $id)
     {
-        // Validasi data
-        $validator = Validator::make($request->all(), [
+        $data = $request->validate([
             'judul' => 'required|string|max:255',
             'category_id' => 'required|integer',
             'sinopsis' => 'required|string',
@@ -86,64 +91,32 @@ class MovieController extends Controller
             'foto_sampul' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        // Jika validasi gagal, kembali ke halaman edit dengan pesan kesalahan
-        if ($validator->fails()) {
-            return redirect("/movies/edit/{$id}")
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        // Ambil data movie yang akan diupdate
-        $movie = Movie::findOrFail($id);
-
-        // Jika ada file yang diunggah, simpan file baru
         if ($request->hasFile('foto_sampul')) {
-            $randomName = Str::uuid()->toString();
-            $fileExtension = $request->file('foto_sampul')->getClientOriginalExtension();
-            $fileName = $randomName . '.' . $fileExtension;
+            $file = $request->file('foto_sampul');
+            $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('images'), $fileName);
 
-            // Simpan file foto ke folder public/images
-            $request->file('foto_sampul')->move(public_path('images'), $fileName);
-
-            // Hapus foto lama jika ada
-            if (File::exists(public_path('images/' . $movie->foto_sampul))) {
-                File::delete(public_path('images/' . $movie->foto_sampul));
-            }
-
-            // Update record di database dengan foto yang baru
-            $movie->update([
-                'judul' => $request->judul,
-                'sinopsis' => $request->sinopsis,
-                'category_id' => $request->category_id,
-                'tahun' => $request->tahun,
-                'pemain' => $request->pemain,
-                'foto_sampul' => $fileName,
-            ]);
-        } else {
-            // Jika tidak ada file yang diunggah, update data tanpa mengubah foto
-            $movie->update([
-                'judul' => $request->judul,
-                'sinopsis' => $request->sinopsis,
-                'category_id' => $request->category_id,
-                'tahun' => $request->tahun,
-                'pemain' => $request->pemain,
-            ]);
+            $data['foto_sampul'] = $fileName;
         }
+
+        $this->movieService->updateMovieById($id, $data);
 
         return redirect('/movies/data')->with('success', 'Data berhasil diperbarui');
     }
 
+    // =========================
+    // DELETE
+    // =========================
     public function delete($id)
     {
-        $movie = Movie::findOrFail($id);
+        $movie = $this->movieService->getMovieById($id);
 
-        // Delete the movie's photo if it exists
-        if (File::exists(public_path('images/' . $movie->foto_sampul))) {
+        // hapus file lama
+        if ($movie->foto_sampul && File::exists(public_path('images/' . $movie->foto_sampul))) {
             File::delete(public_path('images/' . $movie->foto_sampul));
         }
 
-        // Delete the movie record from the database
-        $movie->delete();
+        $this->movieService->deleteMovieById($id);
 
         return redirect('/movies/data')->with('success', 'Data berhasil dihapus');
     }
