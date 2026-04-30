@@ -2,27 +2,54 @@
 
 namespace App\Services;
 
-use App\Models\Movie;
+use App\Repositories\MovieRepository;
 
 class MovieService
 {
-    public function getAllMovies()
+    protected $movieRepository;
+
+    public function __construct(MovieRepository $movieRepository)
     {
-        return Movie::latest()->get();
+        $this->movieRepository = $movieRepository;
     }
 
+    // =========================
+    // GET ALL + SEARCH + PAGINATION
+    // =========================
+    public function getAllMovies($search = null)
+    {
+        return $this->movieRepository->getAll($search);
+    }
+
+    // =========================
+    // GET BY ID
+    // =========================
+    public function getMovieById($id)
+    {
+        return $this->movieRepository->findById($id);
+    }
+
+    // =========================
+    // STORE
+    // =========================
     public function createMovie($data)
     {
-        return Movie::create($data);
+        return $this->movieRepository->store($data);
     }
 
-    public function updateMovie($movie, $data)
+    // =========================
+    // UPDATE
+    // =========================
+    public function updateMovieById($id, $data)
     {
-        return $movie->update($data);
+        return $this->movieRepository->updateById($id, $data);
     }
 
-    public function deleteMovie($movie)
+    // =========================
+    // DELETE
+    // =========================
+    public function deleteMovieById($id)
     {
-        return $movie->delete();
+        return $this->movieRepository->deleteById($id);
     }
 }

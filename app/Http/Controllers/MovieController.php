@@ -19,7 +19,7 @@ class MovieController extends Controller
     }
 
     // =========================
-    // LIST DATA
+    // LIST DATA (PAGINATION FIX)
     // =========================
     public function index()
     {
@@ -52,7 +52,6 @@ class MovieController extends Controller
     {
         $data = $request->validated();
 
-        // upload foto
         if ($request->hasFile('foto_sampul')) {
             $file = $request->file('foto_sampul');
             $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
@@ -88,7 +87,7 @@ class MovieController extends Controller
             'sinopsis' => 'required|string',
             'tahun' => 'required|integer',
             'pemain' => 'required|string',
-            'foto_sampul' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'foto_sampul' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         if ($request->hasFile('foto_sampul')) {
@@ -111,7 +110,6 @@ class MovieController extends Controller
     {
         $movie = $this->movieService->getMovieById($id);
 
-        // hapus file lama
         if ($movie->foto_sampul && File::exists(public_path('images/' . $movie->foto_sampul))) {
             File::delete(public_path('images/' . $movie->foto_sampul));
         }
