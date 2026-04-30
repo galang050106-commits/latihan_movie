@@ -8,18 +8,20 @@ use App\Interfaces\MovieRepositoryInterface;
 class MovieRepository implements MovieRepositoryInterface
 {
     // =========================
-    // GET ALL + SEARCH
+    // GET ALL + SEARCH + PAGINATION
     // =========================
     public function getAll($search = null)
     {
         $query = Movie::with('category')->latest();
 
         if ($search) {
-            $query->where('judul', 'like', '%' . $search . '%')
+            $query->where(function ($q) use ($search) {
+                $q->where('judul', 'like', '%' . $search . '%')
                   ->orWhere('sinopsis', 'like', '%' . $search . '%');
+            });
         }
 
-        return $query->paginate(6);
+        return $query->paginate(6)->withQueryString();
     }
 
     // =========================
@@ -44,7 +46,9 @@ class MovieRepository implements MovieRepositoryInterface
     public function updateById($id, $data)
     {
         $movie = Movie::findOrFail($id);
-        return $movie->update($data);
+        $movie->update($data);
+
+        return $movie;
     }
 
     // =========================
@@ -53,6 +57,8 @@ class MovieRepository implements MovieRepositoryInterface
     public function deleteById($id)
     {
         $movie = Movie::findOrFail($id);
-        return $movie->delete();
+        $movie->delete();
+
+        return true;
     }
 }
