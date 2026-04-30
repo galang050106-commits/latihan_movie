@@ -4,35 +4,62 @@
 
 @section('content')
 
-<h1>Data-Movie</h1>
-<table class="table table-hover">
-    <thead>
-      <tr>
-        <th scope="col">No</th>
-        <th scope="col">Judul</th>
-        <th scope="col">Kategori</th>
-        <th scope="col">Tahun</th>
-        <th scope="col">Pemain</th>
-        <th scope="col">Aksi</th>
-      </tr>
-    </thead>
-    <tbody>
-        @foreach ($movies as $movie)
+<h1 class="mb-3">Data Movie</h1>
+
+<a href="/movies/create" class="btn btn-primary mb-3">Tambah Movie</a>
+
+<table class="table table-hover table-bordered">
+    <thead class="table-success">
         <tr>
-            <th scope="row">{{ $loop->iteration }}</th>
+            <th>No</th>
+            <th>Judul</th>
+            <th>Kategori</th>
+            <th>Tahun</th>
+            <th>Pemain</th>
+            <th class="text-center">Aksi</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @forelse ($movies as $movie)
+        <tr>
+            <td>{{ $loop->iteration }}</td>
             <td>{{ $movie->judul }}</td>
-            <td>{{ $movie->category->nama_kategori }}</td>
+            <td>{{ $movie->category->nama_kategori ?? '-' }}</td>
             <td>{{ $movie->tahun }}</td>
             <td>{{ $movie->pemain }}</td>
-            <td class="text-nowrap">
-                <a href="/movies/edit/{{ $movie['id'] }}" class="btn btn-warning">Edit</a>
-                <a href="{{ route('movies.delete', ['id' => $movie->id]) }}" class="btn btn-danger" onclick="return confirm('Apakah Anda yakin ingin menghapus data ini?')">Hapus</a>
+
+            <td class="text-nowrap text-center">
+
+                {{-- Edit --}}
+                <a href="/movies/edit/{{ $movie->id }}" class="btn btn-warning btn-sm">
+                    Edit
+                </a>
+
+                {{-- Delete (PAKAI FORM, BUKAN LINK) --}}
+                <form action="{{ route('movies.delete', $movie->id) }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+
+                    <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Yakin hapus data ini?')">
+                        Hapus
+                    </button>
+                </form>
+
             </td>
         </tr>
-        @endforeach
+
+        @empty
+        <tr>
+            <td colspan="6" class="text-center">Data tidak ditemukan</td>
+        </tr>
+        @endforelse
     </tbody>
-  </table>
-    <div class="d-flex justify-content-center">
-        {{ $movies->links() }}
-    </div>
+</table>
+
+<div class="d-flex justify-content-center">
+    {{ $movies->links() }}
+</div>
+
 @endsection
