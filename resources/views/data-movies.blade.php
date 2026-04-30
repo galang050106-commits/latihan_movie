@@ -6,7 +6,7 @@
 
 <h1 class="mb-3">Data Movie</h1>
 
-<a href="/movies/create" class="btn btn-primary mb-3">Tambah Movie</a>
+<a href="{{ url('/movies/create') }}" class="btn btn-primary mb-3">Tambah Movie</a>
 
 <table class="table table-hover table-bordered">
     <thead class="table-success">
@@ -23,7 +23,9 @@
     <tbody>
         @forelse ($movies as $movie)
         <tr>
-            <td>{{ $loop->iteration }}</td>
+            {{-- FIX: nomor pagination biar tidak reset --}}
+            <td>{{ ($movies->currentPage() - 1) * $movies->perPage() + $loop->iteration }}</td>
+
             <td>{{ $movie->judul }}</td>
             <td>{{ $movie->category->nama_kategori ?? '-' }}</td>
             <td>{{ $movie->tahun }}</td>
@@ -32,11 +34,11 @@
             <td class="text-nowrap text-center">
 
                 {{-- Edit --}}
-                <a href="/movies/edit/{{ $movie->id }}" class="btn btn-warning btn-sm">
+                <a href="{{ url('/movies/edit/'.$movie->id) }}" class="btn btn-warning btn-sm">
                     Edit
                 </a>
 
-                {{-- Delete (PAKAI FORM, BUKAN LINK) --}}
+                {{-- Delete --}}
                 <form action="{{ route('movies.delete', $movie->id) }}" method="POST" style="display:inline;">
                     @csrf
                     @method('DELETE')
@@ -58,6 +60,7 @@
     </tbody>
 </table>
 
+{{-- Pagination --}}
 <div class="d-flex justify-content-center">
     {{ $movies->links() }}
 </div>

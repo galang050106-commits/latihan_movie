@@ -19,7 +19,7 @@ class MovieController extends Controller
     }
 
     // =========================
-    // LIST DATA (PAGINATION FIX)
+    // LIST
     // =========================
     public function index()
     {
@@ -37,7 +37,7 @@ class MovieController extends Controller
     }
 
     // =========================
-    // FORM INPUT
+    // FORM CREATE
     // =========================
     public function create()
     {
@@ -87,7 +87,7 @@ class MovieController extends Controller
             'sinopsis' => 'required|string',
             'tahun' => 'required|integer',
             'pemain' => 'required|string',
-            'foto_sampul' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'foto_sampul' => 'image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         if ($request->hasFile('foto_sampul')) {
@@ -104,7 +104,7 @@ class MovieController extends Controller
     }
 
     // =========================
-    // DELETE
+    // DELETE (FIX FINAL)
     // =========================
     public function delete($id)
     {
